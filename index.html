@@ -30,6 +30,13 @@
         button:hover {
             background-color: #003B8A;
         }
+        .copy-button {
+            margin-top: 10px;
+            background-color: #28a745;
+        }
+        .copy-button:hover {
+            background-color: #218838;
+        }
         pre {
             background-color: white;
             padding: 20px;
@@ -37,6 +44,17 @@
             font-family: monospace;
             white-space: pre-wrap;
             word-wrap: break-word;
+            overflow: auto; /* Allow scrolling */
+        }
+        #cssOutput {
+            width: 100%;
+            max-height: 300px; /* Fixed height with scrolling */
+            overflow: auto; /* Enable scrolling if content overflows */
+        }
+           #jsxStructure {
+            width: 100%;
+            max-height: 300px; /* Fixed height with scrolling */
+            overflow: auto; /* Enable scrolling if content overflows */
         }
     </style>
 </head>
@@ -49,58 +67,75 @@
 
     <h2>JSX Structure:</h2>
     <pre id="jsxStructure"></pre>
+    <button class="copy-button" onclick="copyToClipboard('jsxStructure')">Copy JSX Structure</button>
 
     <h2>CSS Output:</h2>
     <pre id="cssOutput"></pre>
+    <button class="copy-button" onclick="copyToClipboard('cssOutput')">Copy CSS Output</button>
 
     <script>
-        function convertJsx() {
+        async function convertJsx() {
             const jsx = document.getElementById('jsxInput').value;
 
-            function convertJsxToCss(jsx) {
-                const classNameMatches = [...jsx.matchAll(/className="([^"]+)"/g)];
-                const styleMatches = [...jsx.matchAll(/style={{([^}]+)}}/g)];
-                
-                let css = '';
-                classNameMatches.forEach((match, index) => {
-                    const className = match[1];
-                    const styleMatch = styleMatches[index];
-                    const styleString = styleMatch ? styleMatch[1] : '';
+            // Wrap the conversion functions in promises to use async/await
+            const convertJsxToCss = async (jsx) => {
+                return new Promise(resolve => {
+                    const classNameMatches = [...jsx.matchAll(/className="([^"]+)"/g)];
+                    const styleMatches = [...jsx.matchAll(/style={{([^}]+)}}/g)];
+                    
+                    const css = classNameMatches.map((match, index) => {
+                        const className = match[1];
+                        const styleString = styleMatches[index]?.[1] || '';
 
-                    const styles = styleString
-                        .split(',')
-                        .map(style => {
-                            let [key, value] = style.split(':').map(s => s.trim());
-                            key = key.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
-                            if (!isNaN(value) && !['0', '0%'].includes(value)) {
-                                value += 'px';
-                            }
-                            value = value.replace(/'/g, '');
-                            return `${key}: ${value};`;
-                        })
-                        .join('\n  ');
+                        const styles = styleString
+                            .split(',')
+                            .map(style => {
+                                const [key, value] = style.split(':').map(s => s.trim());
+                                if (!key || !value) return ''; // Skip invalid styles
+                                const formattedKey = key.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
+                                const formattedValue = isNaN(value) || ['0', '0%'].includes(value)
+                                    ? value.replace(/'/g, '')
+                                    : `${value.replace(/'/g, '')}px`;
+                                return `${formattedKey}: ${formattedValue};`;
+                            })
+                            .filter(Boolean)
+                            .join('\n  ');
 
-                    css += `.${className} {\n  ${styles}\n}\n\n`;
+                        return `.${className} {\n  ${styles}\n}\n`;
+                    }).join('\n');
+
+                    resolve(css.trim());
                 });
+            };
 
-                return css.trim();
+            const extractJsxStructure = async (jsx) => {
+                return new Promise(resolve => {
+                    const jsxStructure = jsx.replace(/style={{[^}]*}}/g, '');
+                    resolve(jsxStructure);
+                });
+            };
+
+            try {
+                const css = await convertJsxToCss(jsx);
+                const jsxStructure = await extractJsxStructure(jsx);
+
+                document.getElementById('cssOutput').textContent = css;
+                document.getElementById('jsxStructure').textContent = jsxStructure;
+            } catch (error) {
+                console.error('Error during conversion:', error);
             }
+        }
 
-            function extractJsxStructure(jsx) {
-                // Use a regex to remove style attributes while preserving className attributes
-                return jsx
-                    .replace(/style={{[^}]+}}/g, '') // Remove style attributes
-                    .replace(/className="([^"]*)"/g, '<div className="$1">') // Keep className attributes
-                    .replace(/<div\s+className="([^"]*)">([^<]*)<\/div>/g, '<div className="$1">$2</div>') // Maintain closing tags
-                    .replace(/<\/div><div/g, '</div>\n<div') // Add newlines for better readability
-                    .trim();
+        function copyToClipboard(id) {
+            const element = document.getElementById(id);
+            if (element) {
+                const text = element.textContent || '';
+                navigator.clipboard.writeText(text).then(() => {
+                    alert('Copied to clipboard!');
+                }).catch(err => {
+                    console.error('Error copying to clipboard:', err);
+                });
             }
-
-            const css = convertJsxToCss(jsx);
-            const jsxStructure = extractJsxStructure(jsx);
-
-            document.getElementById('cssOutput').textContent = css;
-            document.getElementById('jsxStructure').textContent = jsxStructure;
         }
     </script>
 
