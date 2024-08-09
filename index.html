@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,6 +12,7 @@
             padding: 20px;
             background-color: #f4f4f4;
         }
+
         textarea {
             width: 100%;
             height: auto;
@@ -18,6 +20,7 @@
             padding: 10px;
             margin-bottom: 20px;
         }
+
         button {
             padding: 10px 20px;
             font-size: 16px;
@@ -27,16 +30,20 @@
             cursor: pointer;
             margin-bottom: 20px;
         }
+
         button:hover {
             background-color: #003B8A;
         }
+
         .copy-button {
             margin-top: 10px;
             background-color: #28a745;
         }
+
         .copy-button:hover {
             background-color: #218838;
         }
+
         pre {
             background-color: white;
             padding: 20px;
@@ -44,20 +51,28 @@
             font-family: monospace;
             white-space: pre-wrap;
             word-wrap: break-word;
-            overflow: auto; /* Allow scrolling */
+            overflow: auto;
+            /* Allow scrolling */
         }
+
         #cssOutput {
             width: 100%;
-            max-height: 300px; /* Fixed height with scrolling */
-            overflow: auto; /* Enable scrolling if content overflows */
+            max-height: 300px;
+            /* Fixed height with scrolling */
+            overflow: auto;
+            /* Enable scrolling if content overflows */
         }
-           #jsxStructure {
+
+        #jsxStructure {
             width: 100%;
-            max-height: 300px; /* Fixed height with scrolling */
-            overflow: auto; /* Enable scrolling if content overflows */
+            max-height: 300px;
+            /* Fixed height with scrolling */
+            overflow: auto;
+            /* Enable scrolling if content overflows */
         }
     </style>
 </head>
+
 <body>
 
     <h1>JSX to CSS Converter</h1>
@@ -82,7 +97,7 @@
                 return new Promise(resolve => {
                     const classNameMatches = [...jsx.matchAll(/className="([^"]+)"/g)];
                     const styleMatches = [...jsx.matchAll(/style={{([^}]+)}}/g)];
-                    
+
                     const css = classNameMatches.map((match, index) => {
                         const className = match[1];
                         const styleString = styleMatches[index]?.[1] || '';
@@ -120,36 +135,42 @@
                 const jsxStructure = await extractJsxStructure(jsx);
 
                 document.getElementById('cssOutput').textContent = css;
-                document.getElementById('jsxStructure').textContent = jsxStructure;
+                document.getElementById('jsxStructure').textContent = convertClassnameToClassName(jsxStructure);
             } catch (error) {
                 console.error('Error during conversion:', error);
             }
         }
-        
-function removeNonDivTags(html) {
-    // Create a temporary DOM element to parse the HTML
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = html;
 
-    // Function to recursively filter only <div> elements
-     function filterDivs(element) {
-        if (element.nodeType === Node.ELEMENT_NODE) {
-            if (element.tagName.toLowerCase() !== 'div') {
-                // Remove non-<div> elements
-                element.remove();
-            } else {
-                // Recursively process child elements
-                Array.from(element.childNodes).forEach(child => filterDivs(child));
+        function removeNonDivTags(html) {
+            // Create a temporary DOM element to parse the HTML
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = html;
+
+            // Function to recursively filter only <div> elements
+            function filterDivs(element) {
+                if (element.nodeType === Node.ELEMENT_NODE) {
+                    if (element.tagName.toLowerCase() !== 'div') {
+                        // Remove non-<div> elements
+                        element.remove();
+                    } else {
+                        // Recursively process child elements
+                        Array.from(element.childNodes).forEach(child => filterDivs(child));
+                    }
+                }
             }
+
+            // Start the filtering process
+            filterDivs(tempDiv);
+
+            // Return the filtered HTML as a string
+            return tempDiv.innerHTML;
         }
-    }
 
-    // Start the filtering process
-    filterDivs(tempDiv);
 
-    // Return the filtered HTML as a string
-    return tempDiv.innerHTML;
-}
+        function convertClassnameToClassName(html) {
+            // Use a regular expression to replace 'classname' with 'className'
+            return html.replace(/\bclassname\b/g, 'className');
+        }
 
 
 
@@ -168,4 +189,5 @@ function removeNonDivTags(html) {
     </script>
 
 </body>
+
 </html>
