@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSX to CSS Converter</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        textarea {
+            width: 100%;
+            height: 150px;
+            font-family: monospace;
+            padding: 10px;
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #004CBB;
+            color: white;
+            border: none;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+        button:hover {
+            background-color: #003B8A;
+        }
+        pre {
+            background-color: white;
+            padding: 20px;
+            border: 1px solid #ddd;
+            font-family: monospace;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>JSX to CSS Converter</h1>
+    <p>Paste your JSX code below and click "Convert to CSS".</p>
+    <textarea id="jsxInput" placeholder='Paste your JSX code here'></textarea>
+    <button onclick="convertJsx()">Convert to CSS</button>
+
+    <h2>CSS Output:</h2>
+    <pre id="cssOutput"></pre>
+
+    <script>
+        function convertJsx() {
+            const jsx = document.getElementById('jsxInput').value;
+            
+            function convertJsxToCss(jsx) {
+                const classNameMatch = jsx.match(/className="([^"]+)"/);
+                const className = classNameMatch ? classNameMatch[1] : '';
+
+                const styleMatch = jsx.match(/style={{([^}]+)}}/);
+                const styleString = styleMatch ? styleMatch[1] : '';
+
+                const styles = styleString
+                    .split(',')
+                    .map(style => {
+                        let [key, value] = style.split(':').map(s => s.trim());
+                        key = key.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
+                        if (!isNaN(value) && !['0', '0%'].includes(value)) {
+                            value += 'px';
+                        }
+                        value = value.replace(/'/g, '');
+                        return `${key}: ${value};`;
+                    })
+                    .join('\n  ');
+
+                return `.${className} {\n  ${styles}\n}`;
+            }
+
+            const css = convertJsxToCss(jsx);
+            document.getElementById('cssOutput').textContent = css;
+        }
+    </script>
+
+</body>
+</html>
