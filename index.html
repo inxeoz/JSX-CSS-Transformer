@@ -47,38 +47,60 @@
     <textarea id="jsxInput" placeholder='Paste your JSX code here'></textarea>
     <button onclick="convertJsx()">Convert to CSS</button>
 
+    <h2>JSX Structure:</h2>
+    <pre id="jsxStructure"></pre>
+
     <h2>CSS Output:</h2>
     <pre id="cssOutput"></pre>
 
     <script>
         function convertJsx() {
             const jsx = document.getElementById('jsxInput').value;
-            
+
             function convertJsxToCss(jsx) {
-                const classNameMatch = jsx.match(/className="([^"]+)"/);
-                const className = classNameMatch ? classNameMatch[1] : '';
+                const classNameMatches = [...jsx.matchAll(/className="([^"]+)"/g)];
+                const styleMatches = [...jsx.matchAll(/style={{([^}]+)}}/g)];
+                
+                let css = '';
+                classNameMatches.forEach((match, index) => {
+                    const className = match[1];
+                    const styleMatch = styleMatches[index];
+                    const styleString = styleMatch ? styleMatch[1] : '';
 
-                const styleMatch = jsx.match(/style={{([^}]+)}}/);
-                const styleString = styleMatch ? styleMatch[1] : '';
+                    const styles = styleString
+                        .split(',')
+                        .map(style => {
+                            let [key, value] = style.split(':').map(s => s.trim());
+                            key = key.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
+                            if (!isNaN(value) && !['0', '0%'].includes(value)) {
+                                value += 'px';
+                            }
+                            value = value.replace(/'/g, '');
+                            return `${key}: ${value};`;
+                        })
+                        .join('\n  ');
 
-                const styles = styleString
-                    .split(',')
-                    .map(style => {
-                        let [key, value] = style.split(':').map(s => s.trim());
-                        key = key.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
-                        if (!isNaN(value) && !['0', '0%'].includes(value)) {
-                            value += 'px';
-                        }
-                        value = value.replace(/'/g, '');
-                        return `${key}: ${value};`;
-                    })
-                    .join('\n  ');
+                    css += `.${className} {\n  ${styles}\n}\n\n`;
+                });
 
-                return `.${className} {\n  ${styles}\n}`;
+                return css.trim();
+            }
+
+            function extractJsxStructure(jsx) {
+                // Use a regex to remove style attributes while preserving className attributes
+                return jsx
+                    .replace(/style={{[^}]+}}/g, '') // Remove style attributes
+                    .replace(/className="([^"]*)"/g, '<div className="$1">') // Keep className attributes
+                    .replace(/<div\s+className="([^"]*)">([^<]*)<\/div>/g, '<div className="$1">$2</div>') // Maintain closing tags
+                    .replace(/<\/div><div/g, '</div>\n<div') // Add newlines for better readability
+                    .trim();
             }
 
             const css = convertJsxToCss(jsx);
+            const jsxStructure = extractJsxStructure(jsx);
+
             document.getElementById('cssOutput').textContent = css;
+            document.getElementById('jsxStructure').textContent = jsxStructure;
         }
     </script>
 
