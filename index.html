@@ -111,7 +111,7 @@
             const extractJsxStructure = async (jsx) => {
                 return new Promise(resolve => {
                     const jsxStructure = jsx.replace(/style={{[^}]*}}/g, '');
-                    resolve(jsxStructure);
+                    resolve(removeNonDivTags(jsxStructure));
                 });
             };
 
@@ -125,6 +125,34 @@
                 console.error('Error during conversion:', error);
             }
         }
+        
+function removeNonDivTags(html) {
+    // Create a temporary DOM element to parse the HTML
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = html;
+
+    // Function to recursively filter only <div> elements
+     function filterDivs(element) {
+        if (element.nodeType === Node.ELEMENT_NODE) {
+            if (element.tagName.toLowerCase() !== 'div') {
+                // Remove non-<div> elements
+                element.remove();
+            } else {
+                // Recursively process child elements
+                Array.from(element.childNodes).forEach(child => filterDivs(child));
+            }
+        }
+    }
+
+    // Start the filtering process
+    filterDivs(tempDiv);
+
+    // Return the filtered HTML as a string
+    return tempDiv.innerHTML;
+}
+
+
+
 
         function copyToClipboard(id) {
             const element = document.getElementById(id);
